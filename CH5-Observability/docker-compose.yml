@@ -1,0 +1,81 @@
+services:
+  observabilitydemo.api:
+    image: ${DOCKER_REGISTRY-}observabilitydemoapi
+    build:
+      context: .
+      dockerfile: ObservabilityDemo.Api/Dockerfile
+    networks:
+      - observability-net
+ 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel/otel-collector-config.yaml"]
+    container_name: otel-collector
+    volumes:
+      - ./Configuration:/etc/otel      
+    ports:  
+      - 8888:8888   # Prometheus metrics exposed by the collector    
+      - 9464:9464   # Prometheus Metrics    
+      - 4317:4317   # OTLP gRPC receiver
+    depends_on:
+      - jaeger
+      - loki
+      - prometheus
+    networks:
+      - observability-net
+    
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - 16686:16686  # Jaeger UI
+      - 54317:4317  # OTLP gRPC
+     
+    environment:
+      - LOG_LEVEL=debug
+      - COLLECTOR_OTLP_ENABLED=true
+
+    networks:
+      - observability-net
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    networks:
+      - observability-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+    volumes:
+      - ./Configuration/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+    networks:
+      - observability-net
+
+  grafana:
+    image: grafana/grafana:9.3.2
+    volumes:
+      - ./Configuration/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    ports:
+      - "3000:3000"
+    networks:
+      - observability-net
+    depends_on:
+      - jaeger
+      - loki
+      - prometheus
+      
+networks:
+  observability-net: 
+    driver: bridge

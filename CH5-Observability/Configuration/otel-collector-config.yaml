@@ -1,0 +1,40 @@
+# This is not a production ready configuration, it is just a starting point
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+exporters:
+  logging:
+    verbosity: detailed       
+  otlp/jaeger:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    format: json
+  prometheus:
+    endpoint: "0.0.0.0:9464" # Prometheus pulls metrics from here
+    send_timestamps: true
+    metric_expiration: 180m
+    enable_open_metrics: true
+processors:
+  batch:
+service:
+  telemetry:
+    logs:
+      level: "debug"    
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, otlp/jaeger]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, loki]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, prometheus]

@@ -1,0 +1,13 @@
+@ObservabilityDemo.Api_HostAddress = http://localhost:8080
+
+POST {{ObservabilityDemo.Api_HostAddress}}/order
+Content-Type: application/json
+###
+
+GET {{ObservabilityDemo.Api_HostAddress}}/order/b2e001f8-4de0-42a2-8b45-484f9e4a99ca
+Accept: application/json
+###
+
+GET {{ObservabilityDemo.Api_HostAddress}}/orders
+Accept: application/json
+###
