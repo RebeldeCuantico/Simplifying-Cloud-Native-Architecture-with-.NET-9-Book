@@ -9,13 +9,11 @@ namespace ObservabilityDemo.Api
         internal const string MeterName = "ObservabilityDemo";
         private readonly Meter _meter;
         private readonly ILogger _logger;
-        private readonly Random _random;
 
         public Diagnostic(ILoggerFactory loggerFactory)
         {
             _ = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _logger = loggerFactory.CreateLogger<Diagnostic>();
-            _random = new Random();
             var version = typeof(Diagnostic).Assembly.GetName().Version?.ToString();
             ActivitySource = new ActivitySource(ActivitySourceName, version);
             _meter = new Meter(MeterName, version);
